@@ -1,0 +1,5 @@
+_site/
+.obsidian/
+node_modules/
+__pycache__/
+*.pyc
