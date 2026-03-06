@@ -35,7 +35,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.9'
 
       - name: Convert Obsidian notes to Docsify site
         run: python scripts/convert_obsidian.py --src . --out _site
