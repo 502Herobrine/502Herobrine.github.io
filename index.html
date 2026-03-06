@@ -5,8 +5,6 @@
   <title>我的笔记站点</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify/lib/themes/vue.css">
-  <!-- KaTeX stylesheet for LaTeX rendering -->
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
   <style>
     /* Allow images to respect their width attribute while staying responsive */
     .markdown-section img {
@@ -17,6 +15,22 @@
 </head>
 <body>
   <div id="app">加载中...</div>
+  <!-- MathJax 3 configuration (must appear before the MathJax script) -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$']],
+        displayMath: [['$$', '$$']],
+        processEscapes: true,
+        packages: {'[+]': ['ams']},
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+      }
+    };
+  </script>
+  <!-- LaTeX 公式渲染：MathJax 3（支持 align、cases 等多行环境） -->
+  <script src="//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
   <script>
     window.$docsify = {
       name: '我的笔记',
@@ -25,7 +39,59 @@
       subMaxLevel: 3,
       search: 'auto',
       auto2top: true,
-      relativePath: true
+      relativePath: true,
+      plugins: [
+        // Protect LaTeX blocks from marked's backslash-escape processing,
+        // then re-insert them after rendering and typeset with MathJax.
+        function(hook) {
+          var mathStore = {};
+
+          hook.beforeEach(function(content) {
+            mathStore = {};
+            var counter = 0;
+            // Protect display math ($$...$$) — must run before inline math
+            content = content.replace(/\$\$([\s\S]+?)\$\$/g, function(match) {
+              var key = counter++;
+              mathStore[key] = match;
+              return '<div class="docsify-math" data-key="' + key + '"></div>';
+            });
+            // Protect inline math ($...$)
+            content = content.replace(/\$([^$\n]+?)\$/g, function(match) {
+              var key = counter++;
+              mathStore[key] = match;
+              return '<span class="docsify-math" data-key="' + key + '"></span>';
+            });
+            return content;
+          });
+
+          hook.afterEach(function(html) {
+            // Restore original LaTeX inside its container tag.
+            // Encode special HTML characters so the parser won't mangle the LaTeX
+            // (browser decodes them back to the raw chars before MathJax reads the text).
+            html = html.replace(
+              /<(div|span) class="docsify-math" data-key="(\d+)"><\/\1>/g,
+              function(match, tag, key) {
+                var math = mathStore[parseInt(key, 10)];
+                if (math == null) return match;
+                var escaped = math
+                  .replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;');
+                return '<' + tag + '>' + escaped + '</' + tag + '>';
+              }
+            );
+            return html;
+          });
+
+          hook.doneEach(function() {
+            if (window.MathJax && window.MathJax.typesetPromise) {
+              MathJax.typesetPromise().catch(function(err) {
+                console.error('MathJax typesetting error:', err);
+              });
+            }
+          });
+        }
+      ]
     }
   </script>
   <script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>
@@ -33,9 +99,5 @@
   <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
   <!-- 图片缩放插件 -->
   <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script>
-  <!-- LaTeX 公式渲染：KaTeX JS + marked + docsify-katex 插件 -->
-  <script src="//cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/marked@4"></script>
-  <script src="//cdn.jsdelivr.net/npm/docsify-katex@latest/dist/docsify-katex.js"></script>
 </body>
 </html>
