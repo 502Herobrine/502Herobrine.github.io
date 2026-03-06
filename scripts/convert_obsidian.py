@@ -242,6 +242,17 @@ def build_site(src_dir: str, out_dir: str) -> None:
     (out / '_sidebar.md').write_text(sidebar_content, encoding='utf-8')
     print(f'  generated: _sidebar.md')
 
+    # Copy _sidebar.md into every subdirectory so that Docsify can find the
+    # sidebar when ``relativePath: true`` is set.  Without these copies Docsify
+    # looks for ``_sidebar.md`` relative to the current page and fails when
+    # the page lives in a subdirectory.
+    for root_dir, dirs, _files in os.walk(out):
+        dirs[:] = [d for d in dirs if d not in skip_dirs and not d.startswith('.')]
+        sub = Path(root_dir)
+        if sub != out:
+            (sub / '_sidebar.md').write_text(sidebar_content, encoding='utf-8')
+            print(f'  copied: {sub.relative_to(out)}/_sidebar.md')
+
     # Create .nojekyll to prevent GitHub Pages from ignoring _sidebar.md
     (out / '.nojekyll').write_text('', encoding='utf-8')
     print(f'  generated: .nojekyll')
