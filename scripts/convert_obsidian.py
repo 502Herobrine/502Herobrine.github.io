@@ -95,10 +95,32 @@ def convert_obsidian_links(content: str) -> str:
     return OBSIDIAN_LINK_RE.sub(_replace_link, content)
 
 
+def ensure_blank_line_before_headings(content: str) -> str:
+    """
+    Ensure there is a blank line before every ATX heading.
+
+    Many Markdown parsers (including the one used by Docsify) require a blank
+    line before a heading for it to be recognised.  Without that blank line a
+    heading that directly follows a ``---`` thematic break or a ``$$`` display-
+    math fence is silently swallowed.
+
+    This function inserts a single blank line before any ``# …`` line whose
+    preceding line is non-empty.
+    """
+    lines = content.split('\n')
+    result: list[str] = []
+    for i, line in enumerate(lines):
+        if re.match(r'^#{1,6}\s', line) and i > 0 and lines[i - 1].strip() != '':
+            result.append('')
+        result.append(line)
+    return '\n'.join(result)
+
+
 def convert_file(content: str, images_rel_dir: str = "images") -> str:
     """Apply all Obsidian → standard Markdown conversions."""
     content = convert_obsidian_images(content, images_rel_dir)
     content = convert_obsidian_links(content)
+    content = ensure_blank_line_before_headings(content)
     return content
 
 
