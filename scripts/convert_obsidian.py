@@ -220,6 +220,10 @@ def build_site(src_dir: str, out_dir: str) -> None:
     (out / '_sidebar.md').write_text(sidebar_content, encoding='utf-8')
     print(f'  generated: _sidebar.md')
 
+    # Create .nojekyll to prevent GitHub Pages from ignoring _sidebar.md
+    (out / '.nojekyll').write_text('', encoding='utf-8')
+    print(f'  generated: .nojekyll')
+
     print(f'\nBuild complete → {out}')
 
 
