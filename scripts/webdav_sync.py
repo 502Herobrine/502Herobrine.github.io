@@ -224,6 +224,10 @@ def sync(config_path: str, output_dir: str, manifest_path: str | None = None) ->
     """
     Synchronise files from a WebDAV server to *output_dir*.
 
+    *manifest_path* is the location of the JSON manifest that tracks the remote
+    file state (ETags, last-modified timestamps).  When ``None`` it defaults to
+    ``<output_dir>/.webdav_manifest.json``.
+
     Returns ``True`` if any files were added, updated, or deleted.
     """
     config = load_config(config_path)
@@ -237,9 +241,9 @@ def sync(config_path: str, output_dir: str, manifest_path: str | None = None) ->
     # -- credentials ----------------------------------------------------------
     user = os.environ.get("WEBDAV_USER", "")
     password = os.environ.get("WEBDAV_PASSWORD", "")
-    if not user or not password:
-        print("Error: WEBDAV_USER and WEBDAV_PASSWORD environment variables "
-              "must be set.")
+    missing = [v for v in ("WEBDAV_USER", "WEBDAV_PASSWORD") if not os.environ.get(v)]
+    if missing:
+        print(f"Error: missing environment variable(s): {', '.join(missing)}")
         sys.exit(1)
     if not base_url:
         print("Error: webdav.url is not configured.")
