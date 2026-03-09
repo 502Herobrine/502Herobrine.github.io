@@ -246,8 +246,9 @@ def build_site(src_dir: str, out_dir: str) -> None:
     # sidebar when ``relativePath: true`` is set.  Without these copies Docsify
     # looks for ``_sidebar.md`` relative to the current page and fails when
     # the page lives in a subdirectory.
+    sidebar_skip = skip_dirs | {'images'}
     for root_dir, dirs, _files in os.walk(out):
-        dirs[:] = [d for d in dirs if d not in skip_dirs and not d.startswith('.')]
+        dirs[:] = [d for d in dirs if d not in sidebar_skip and not d.startswith('.')]
         sub = Path(root_dir)
         if sub != out:
             (sub / '_sidebar.md').write_text(sidebar_content, encoding='utf-8')
