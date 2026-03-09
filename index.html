@@ -26,6 +26,9 @@
       },
       options: {
         skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+      },
+      startup: {
+        typeset: false  // Let the Docsify plugin handle typesetting per page
       }
     };
   </script>
@@ -85,6 +88,11 @@
 
           hook.doneEach(function() {
             if (window.MathJax && window.MathJax.typesetPromise) {
+              // Clear previously typeset elements so MathJax re-processes
+              // the new page content after Docsify navigation.
+              if (typeof MathJax.typesetClear === 'function') {
+                MathJax.typesetClear();
+              }
               MathJax.typesetPromise().catch(function(err) {
                 console.error('MathJax typesetting error:', err);
               });
