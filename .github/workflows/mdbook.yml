@@ -48,6 +48,10 @@ jobs:
           mkdir -p _site/lib/fonts
           cp node_modules/docsify/lib/docsify.min.js _site/lib/
           cp node_modules/docsify/lib/themes/vue.css _site/lib/
+          # Remove the blocking Google Fonts @import from vue.css.
+          # In China, Google Fonts is inaccessible and the render-blocking
+          # @import causes the page to hang on "加载中..." until DNS times out.
+          sed -i 's/@import url([^)]*fonts\.googleapis\.com[^)]*);*//g' _site/lib/vue.css
           cp node_modules/docsify/lib/plugins/search.min.js _site/lib/
           cp node_modules/docsify/lib/plugins/zoom-image.min.js _site/lib/
           cp node_modules/katex/dist/katex.min.js _site/lib/
