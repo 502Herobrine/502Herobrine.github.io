@@ -211,6 +211,7 @@ def build_site(src_dir: str, out_dir: str) -> None:
     out.mkdir(parents=True)
 
     skip_dirs = {'.git', '.github', '.obsidian', 'node_modules', '_site', 'scripts'}
+    skip_files = {'webdav_config.yml', '.webdav_manifest.json', '.gitignore'}
 
     for root, dirs, files in os.walk(src):
         # Skip hidden / unwanted directories
@@ -221,6 +222,8 @@ def build_site(src_dir: str, out_dir: str) -> None:
         dest_root.mkdir(parents=True, exist_ok=True)
 
         for fname in files:
+            if fname in skip_files:
+                continue
             src_file = Path(root) / fname
             dst_file = dest_root / fname
 

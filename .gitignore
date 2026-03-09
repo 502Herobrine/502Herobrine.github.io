@@ -3,3 +3,4 @@ _site/
 node_modules/
 __pycache__/
 *.pyc
+.webdav_manifest.json
