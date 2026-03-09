@@ -1,0 +1,54 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Sync notes from WebDAV (坚果云) and rebuild the site
+#
+# Runs on a schedule (every 30 minutes) or manually.  When the remote WebDAV
+# folder has new / changed / deleted files the workflow:
+#   1. Downloads the changes to the repository
+#   2. Commits and pushes them to `main`
+#   3. The push automatically triggers the existing "Deploy Obsidian Notes to
+#      Pages" workflow which converts and deploys.
+# ──────────────────────────────────────────────────────────────────────────────
+name: Sync from WebDAV (坚果云)
+
+on:
+  schedule:
+    # Every 30 minutes
+    - cron: "*/30 * * * *"
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install Python dependencies
+        run: pip install requests pyyaml
+
+      - name: Sync from WebDAV
+        id: sync
+        env:
+          WEBDAV_USER: ${{ secrets.WEBDAV_USER }}
+          WEBDAV_PASSWORD: ${{ secrets.WEBDAV_PASSWORD }}
+        run: python scripts/webdav_sync.py --config webdav_config.yml --out .
+
+      - name: Commit and push changes
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          git config user.name  "WebDAV Sync Bot"
+          git config user.email "actions@github.com"
+          git add -A
+          # Only commit+push when there are staged changes
+          if ! git diff --cached --quiet; then
+            git commit -m "auto-sync from WebDAV $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
