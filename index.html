@@ -5,6 +5,8 @@
   <title>我的笔记站点</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="lib/vue.css">
+  <!-- KaTeX 公式样式 -->
+  <link rel="stylesheet" href="lib/katex.min.css">
   <style>
     /* Allow images to respect their width attribute while staying responsive */
     .markdown-section img {
@@ -15,34 +17,8 @@
 </head>
 <body>
   <div id="app">加载中...</div>
-  <!-- MathJax 3 configuration (must appear before the MathJax script) -->
-  <script>
-    window.MathJax = {
-      tex: {
-        inlineMath: [['$', '$']],
-        displayMath: [['$$', '$$']],
-        processEscapes: true,
-        packages: {'[+]': ['ams']},
-      },
-      options: {
-        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-      },
-      startup: {
-        typeset: false,  // Let the Docsify plugin handle typesetting per page
-        ready: function() {
-          MathJax.startup.defaultReady();
-          // Typeset the page that Docsify has already rendered while MathJax
-          // was loading asynchronously (subsequent pages are handled by the
-          // doneEach hook below).
-          MathJax.typesetPromise().catch(function(err) {
-            console.error('MathJax initial typesetting error:', err);
-          });
-        }
-      }
-    };
-  </script>
-  <!-- LaTeX 公式渲染：MathJax 3（支持 align、cases 等多行环境） -->
-  <script src="lib/tex-chtml.js" async></script>
+  <!-- KaTeX 公式渲染（~270KB，同步加载，不阻塞 docsify） -->
+  <script src="lib/katex.min.js"></script>
   <script>
     window.$docsify = {
       name: '我的笔记',
@@ -54,7 +30,7 @@
       relativePath: true,
       plugins: [
         // Protect LaTeX blocks from marked's backslash-escape processing,
-        // then re-insert them after rendering and typeset with MathJax.
+        // then render them with KaTeX in the afterEach hook.
         function(hook) {
           var mathStore = {};
 
@@ -64,48 +40,37 @@
             // Protect display math ($$...$$) — must run before inline math
             content = content.replace(/\$\$([\s\S]+?)\$\$/g, function(match) {
               var key = counter++;
-              mathStore[key] = match;
+              mathStore[key] = { tex: match.slice(2, -2), display: true };
               return '<div class="docsify-math" data-key="' + key + '"></div>';
             });
             // Protect inline math ($...$)
             content = content.replace(/\$([^$\n]+?)\$/g, function(match) {
               var key = counter++;
-              mathStore[key] = match;
+              mathStore[key] = { tex: match.slice(1, -1), display: false };
               return '<span class="docsify-math" data-key="' + key + '"></span>';
             });
             return content;
           });
 
           hook.afterEach(function(html) {
-            // Restore original LaTeX inside its container tag.
-            // Encode special HTML characters so the parser won't mangle the LaTeX
-            // (browser decodes them back to the raw chars before MathJax reads the text).
+            // Replace placeholders with KaTeX-rendered HTML.
             html = html.replace(
               /<(div|span) class="docsify-math" data-key="(\d+)"><\/\1>/g,
               function(match, tag, key) {
-                var math = mathStore[parseInt(key, 10)];
-                if (math == null) return match;
-                var escaped = math
-                  .replace(/&/g, '&amp;')
-                  .replace(/</g, '&lt;')
-                  .replace(/>/g, '&gt;');
-                return '<' + tag + '>' + escaped + '</' + tag + '>';
+                var entry = mathStore[parseInt(key, 10)];
+                if (entry == null) return match;
+                try {
+                  return katex.renderToString(entry.tex, {
+                    displayMode: entry.display,
+                    throwOnError: false
+                  });
+                } catch (e) {
+                  console.error('KaTeX error:', e);
+                  return '<' + tag + ' style="color:red">' + entry.tex + '</' + tag + '>';
+                }
               }
             );
             return html;
-          });
-
-          hook.doneEach(function() {
-            if (window.MathJax && window.MathJax.typesetPromise) {
-              // Clear previously typeset elements so MathJax re-processes
-              // the new page content after Docsify navigation.
-              if (typeof MathJax.typesetClear === 'function') {
-                MathJax.typesetClear();
-              }
-              MathJax.typesetPromise().catch(function(err) {
-                console.error('MathJax typesetting error:', err);
-              });
-            }
           });
         }
       ]

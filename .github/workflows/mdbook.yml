@@ -41,17 +41,18 @@ jobs:
         run: python scripts/convert_obsidian.py --src . --out _site
 
       - name: Install JS dependencies
-        run: npm install --no-save docsify@4 mathjax@3
+        run: npm install --no-save docsify@4 katex
 
       - name: Bundle JS/CSS libraries into site
         run: |
-          mkdir -p _site/lib/output/chtml/fonts/woff-v2
+          mkdir -p _site/lib/fonts
           cp node_modules/docsify/lib/docsify.min.js _site/lib/
           cp node_modules/docsify/lib/themes/vue.css _site/lib/
           cp node_modules/docsify/lib/plugins/search.min.js _site/lib/
           cp node_modules/docsify/lib/plugins/zoom-image.min.js _site/lib/
-          cp node_modules/mathjax/es5/tex-chtml.js _site/lib/
-          cp node_modules/mathjax/es5/output/chtml/fonts/woff-v2/*.woff _site/lib/output/chtml/fonts/woff-v2/
+          cp node_modules/katex/dist/katex.min.js _site/lib/
+          cp node_modules/katex/dist/katex.min.css _site/lib/
+          cp node_modules/katex/dist/fonts/* _site/lib/fonts/
 
       - name: Setup Pages
         id: pages
