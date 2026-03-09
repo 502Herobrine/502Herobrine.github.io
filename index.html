@@ -28,12 +28,21 @@
         skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
       },
       startup: {
-        typeset: false  // Let the Docsify plugin handle typesetting per page
+        typeset: false,  // Let the Docsify plugin handle typesetting per page
+        ready: function() {
+          MathJax.startup.defaultReady();
+          // Typeset the page that Docsify has already rendered while MathJax
+          // was loading asynchronously (subsequent pages are handled by the
+          // doneEach hook below).
+          MathJax.typesetPromise().catch(function(err) {
+            console.error('MathJax initial typesetting error:', err);
+          });
+        }
       }
     };
   </script>
   <!-- LaTeX 公式渲染：MathJax 3（支持 align、cases 等多行环境） -->
-  <script src="lib/tex-chtml.js"></script>
+  <script src="lib/tex-chtml.js" async></script>
   <script>
     window.$docsify = {
       name: '我的笔记',
