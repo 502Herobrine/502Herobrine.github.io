@@ -256,7 +256,7 @@ def sync(config_path: str, output_dir: str, manifest_path: str | None = None) ->
     if not full_url.endswith("/"):
         full_url += "/"
 
-    remote_base_href = urlparse(full_url).path
+    remote_base_href = unquote(urlparse(full_url).path)
 
     # -- manifest -------------------------------------------------------------
     if manifest_path is None:
